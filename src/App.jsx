@@ -509,10 +509,13 @@ function App() {
             </div>
 
             {/* Score Input Table */}
-            <div className="bg-white/90 backdrop-blur rounded-2xl shadow-xl p-8 md:p-10">
-              <h2 className={`text-2xl font-bold mb-6 text-center bg-gradient-to-r ${ROUND_COLORS[currentRound].gradient} bg-clip-text text-transparent`}>
+            <div 
+            className="bg-white/90 backdrop-blur rounded-2xl shadow-xl p-5 md:p-10"
+            style={{ padding: '20px' }}
+            >
+              {/* <h2 className={`text-xl font-bold mb-6 text-center bg-gradient-to-r ${ROUND_COLORS[currentRound].gradient} bg-clip-text text-transparent`}>
                 ✏️ Score Input - Round {currentRound}
-              </h2>
+              </h2> */}
               <div className="grid grid-cols-2 md:grid-cols-5 gap-5 md:gap-6">
                 {participants.map((name, index) => (
                   <div 

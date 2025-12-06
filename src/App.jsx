@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -36,9 +36,24 @@ const INITIAL_PARTICIPANTS = [
 ]
 
 const ROUND_COLORS = {
-  1: { bg: 'rgba(99, 102, 241, 0.85)', border: 'rgb(99, 102, 241)', gradient: 'from-indigo-500 to-blue-600' },
-  2: { bg: 'rgba(16, 185, 129, 0.85)', border: 'rgb(16, 185, 129)', gradient: 'from-emerald-500 to-teal-600' },
-  3: { bg: 'rgba(251, 146, 60, 0.85)', border: 'rgb(251, 146, 60)', gradient: 'from-orange-500 to-amber-600' },
+  1: { 
+    bg: ['rgba(99, 102, 241, 0.9)', 'rgba(139, 92, 246, 0.9)', 'rgba(168, 85, 247, 0.9)'],
+    border: 'rgb(99, 102, 241)', 
+    gradient: 'from-indigo-500 to-blue-600',
+    shadow: 'rgba(99, 102, 241, 0.5)'
+  },
+  2: { 
+    bg: ['rgba(16, 185, 129, 0.9)', 'rgba(5, 150, 105, 0.9)', 'rgba(4, 120, 87, 0.9)'],
+    border: 'rgb(16, 185, 129)', 
+    gradient: 'from-emerald-500 to-teal-600',
+    shadow: 'rgba(16, 185, 129, 0.5)'
+  },
+  3: { 
+    bg: ['rgba(251, 146, 60, 0.9)', 'rgba(249, 115, 22, 0.9)', 'rgba(234, 88, 12, 0.9)'],
+    border: 'rgb(251, 146, 60)', 
+    gradient: 'from-orange-500 to-amber-600',
+    shadow: 'rgba(251, 146, 60, 0.5)'
+  },
 }
 
 const TOP_5_COLORS = [
@@ -49,75 +64,125 @@ const TOP_5_COLORS = [
   'bg-gradient-to-r from-cyan-500 to-blue-500 text-white shadow-lg shadow-cyan-500/30', // 5th
 ]
 
+// Helper to load saved data from localStorage
+const loadSavedData = () => {
+  try {
+    const savedData = localStorage.getItem('quizScoreboard')
+    if (savedData) {
+      const parsed = JSON.parse(savedData)
+      // Fix any empty participant names
+      if (parsed.participants) {
+        parsed.participants = parsed.participants.map((name, i) => 
+          name && name.trim() ? name : `Player ${i + 1}`
+        )
+      }
+      return parsed
+    }
+  } catch (e) {
+    console.error('Failed to load saved data:', e)
+  }
+  return null
+}
+
 function App() {
-  const [currentRound, setCurrentRound] = useState(1)
-  const [showSummary, setShowSummary] = useState(false)
-  const [participants, setParticipants] = useState(INITIAL_PARTICIPANTS)
-  const [scores, setScores] = useState({
+  const savedData = loadSavedData()
+  
+  const [currentRound, setCurrentRound] = useState(savedData?.currentRound || 1)
+  const [showSummary, setShowSummary] = useState(savedData?.showSummary || false)
+  const [participants, setParticipants] = useState(savedData?.participants || INITIAL_PARTICIPANTS)
+  const [scores, setScores] = useState(savedData?.scores || {
     1: Array(10).fill(0),
     2: Array(10).fill(0),
     3: Array(10).fill(0),
   })
   const [editingName, setEditingName] = useState(null)
-  const confettiTriggered = useRef(false)
 
-  // Confetti effect when summary is shown
-  useEffect(() => {
-    if (showSummary && !confettiTriggered.current) {
-      confettiTriggered.current = true
-      // Fire multiple confetti bursts for a more dramatic effect
-      const duration = 3000
-      const end = Date.now() + duration
+  // Confetti burst function
+  const fireConfetti = () => {
+    const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff', '#ffa500', '#ff69b4']
+    const duration = 3000
+    const end = Date.now() + duration
+    
+    const frame = () => {
+      // Left side
+      confetti({
+        particleCount: 5,
+        angle: 60,
+        spread: 55,
+        origin: { x: 0, y: 0.6 },
+        colors: colors
+      })
+      // Right side
+      confetti({
+        particleCount: 5,
+        angle: 120,
+        spread: 55,
+        origin: { x: 1, y: 0.6 },
+        colors: colors
+      })
+      // Center - shooting upward
+      // confetti({
+      //   particleCount: 2,
+      //   angle: 90,
+      //   spread: 60,
+      //   origin: { x: 0.5, y: 0.7 },
+      //   colors: colors
+      // })
 
-      const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff', '#ffa500', '#ff69b4']
-      
-      const frame = () => {
-        confetti({
-          particleCount: 7,
-          angle: 60,
-          spread: 55,
-          origin: { x: 0, y: 0.6 },
-          colors: colors
-        })
-        confetti({
-          particleCount: 7,
-          angle: 120,
-          spread: 55,
-          origin: { x: 1, y: 0.6 },
-          colors: colors
-        })
-
-        if (Date.now() < end) {
-          requestAnimationFrame(frame)
-        }
+      if (Date.now() < end) {
+        requestAnimationFrame(frame)
       }
-      frame()
+    }
+    frame()
 
-      // Also fire some big bursts
-      setTimeout(() => {
-        confetti({
-          particleCount: 100,
-          spread: 100,
-          origin: { y: 0.6 },
-          colors: colors
-        })
-      }, 500)
-    } else if (!showSummary) {
-      confettiTriggered.current = false
+    // Big center bursts at intervals
+    setTimeout(() => {
+      confetti({
+        particleCount: 20,
+        spread: 120,
+        origin: { x: 0.5, y: 0.5 },
+        colors: colors
+      })
+    }, 300)
+    setTimeout(() => {
+      confetti({
+        particleCount: 20,
+        spread: 100,
+        origin: { x: 0.3, y: 0.6 },
+        colors: colors
+      })
+      confetti({
+        particleCount: 20,
+        spread: 100,
+        origin: { x: 0.7, y: 0.6 },
+        colors: colors
+      })
+    }, 600)
+    setTimeout(() => {
+      confetti({
+        particleCount: 20,
+        spread: 150,
+        origin: { x: 0.5, y: 0.4 },
+        colors: colors
+      })
+    }, 1000)
+  }
+
+  // Confetti effect when summary is shown - fires immediately and every 5 seconds
+  useEffect(() => {
+    if (showSummary) {
+      // Fire immediately
+      fireConfetti()
+      
+      // Set up interval to fire every 5 seconds
+      const intervalId = setInterval(() => {
+        fireConfetti()
+      }, 8000)
+      
+      // Cleanup interval when leaving summary
+      return () => clearInterval(intervalId)
     }
   }, [showSummary])
-
-  // Load from localStorage on mount
-  useEffect(() => {
-    const savedData = localStorage.getItem('quizScoreboard')
-    if (savedData) {
-      const { participants: savedParticipants, scores: savedScores, currentRound: savedRound, showSummary: savedShowSummary } = JSON.parse(savedData)
-      if (savedParticipants) setParticipants(savedParticipants)
-      if (savedScores) setScores(savedScores)
-      if (savedRound) setCurrentRound(savedRound)
-      if (savedShowSummary) setShowSummary(savedShowSummary)
-    }
-  }, [])
 
   // Save to localStorage on change
   useEffect(() => {
@@ -142,7 +207,13 @@ function App() {
   }
 
   const updateParticipantName = (index, name) => {
-    setParticipants(prev => prev.map((p, i) => i === index ? name : p))
+    const trimmedName = name.trim()
+    // Don't allow empty names - keep the previous name or use default
+    if (!trimmedName) {
+      setEditingName(null)
+      return
+    }
+    setParticipants(prev => prev.map((p, i) => i === index ? trimmedName : p))
     setEditingName(null)
   }
 
@@ -205,17 +276,31 @@ function App() {
     )
   }
 
-  // Chart data for current round only
+  // Chart data for current round only with gradient colors per bar
   const chartData = {
     labels: participants,
     datasets: [
       {
         label: `Round ${currentRound}`,
         data: scores[currentRound],
-        backgroundColor: ROUND_COLORS[currentRound].bg,
+        backgroundColor: (context) => {
+          const chart = context.chart
+          const { ctx, chartArea } = chart
+          if (!chartArea) return ROUND_COLORS[currentRound].bg[0]
+          
+          // Create gradient for each bar
+          const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top)
+          gradient.addColorStop(0, ROUND_COLORS[currentRound].bg[0])
+          gradient.addColorStop(0.5, ROUND_COLORS[currentRound].bg[1])
+          gradient.addColorStop(1, ROUND_COLORS[currentRound].bg[2])
+          return gradient
+        },
         borderColor: ROUND_COLORS[currentRound].border,
         borderWidth: 2,
-        borderRadius: 8,
+        borderRadius: 12,
+        borderSkipped: false,
+        hoverBackgroundColor: ROUND_COLORS[currentRound].bg[2],
+        hoverBorderWidth: 3,
       },
     ],
   }
@@ -223,43 +308,69 @@ function App() {
   const chartOptions = {
     responsive: true,
     maintainAspectRatio: false,
+    animation: {
+      duration: 800,
+      easing: 'easeOutQuart',
+    },
     plugins: {
       legend: {
         display: false,
       },
       title: {
-        display: true,
-        text: `🎯 Scoreboard - Round ${currentRound}`,
-        font: { size: 24, weight: 'bold' },
-        color: '#1f2937',
-        padding: 20,
+        display: false,
       },
       datalabels: {
         anchor: 'end',
         align: 'top',
-        color: '#1f2937',
+        color: ROUND_COLORS[currentRound].border,
         font: {
-          size: 14,
+          size: 16,
           weight: 'bold',
         },
         formatter: (value) => value > 0 ? value : '',
+        padding: { top: 4 },
+      },
+      tooltip: {
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        titleFont: { size: 14, weight: 'bold' },
+        bodyFont: { size: 13 },
+        padding: 12,
+        cornerRadius: 8,
+        displayColors: false,
       },
     },
     scales: {
       x: {
         ticks: {
-          font: { size: 12, weight: '600' },
-          color: '#374151',
+          font: { size: 11, weight: '600' },
+          color: '#4b5563',
+          maxRotation: 45,
+          minRotation: 0,
         },
         grid: { display: false },
+        border: { display: false },
       },
       y: {
         beginAtZero: true,
+        grace: '15%',
         ticks: {
-          font: { size: 12 },
+          font: { size: 12, weight: '500' },
           color: '#6b7280',
+          padding: 8,
         },
-        grid: { color: 'rgba(0,0,0,0.1)' },
+        grid: { 
+          color: 'rgba(0, 0, 0, 0.06)',
+          drawBorder: false,
+        },
+        border: { display: false },
+      },
+    },
+    layout: {
+      padding: {
+        top: 35,
+        right: 20,
+        bottom: 10,
+        left: 10,
       },
     },
   }
@@ -277,7 +388,7 @@ function App() {
           className="text-5xl font-extrabold bg-gradient-to-r from-purple-600 via-pink-500 to-orange-500 bg-clip-text text-transparent mb-4 drop-shadow-sm"
           style={{ padding: '20px 0px 10px 0px' }}
           >
-            🎮 Scoreboard
+            🎯 Scoreboard
           </h1>
           
           {/* Round Navigation Tabs */}
@@ -417,7 +528,10 @@ function App() {
 
             {/* Full Rankings Table */}
             <div className="bg-white/90 backdrop-blur rounded-2xl shadow-xl p-8">
-              <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">
+              <h2 
+              className="text-2xl font-bold text-gray-800 mb-6 text-center"
+              style={{ fontSize: '1.5rem', paddingTop: '20px', paddingBottom: '15px' }}
+              >
                 📊 Full Rankings
               </h2>
               <div className="overflow-x-auto">
@@ -441,6 +555,7 @@ function App() {
                             ? 'bg-gradient-to-r from-yellow-50 to-orange-50 hover:from-yellow-100 hover:to-orange-100' 
                             : 'hover:bg-gray-50'
                         }`}
+                        style={{ paddingTop: '5px', paddingBottom: '5px' }}
                       >
                         <td className="p-3 text-center">
                           <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full font-bold ${
@@ -471,7 +586,10 @@ function App() {
         ) : (
           <>
             {/* Round Chart */}
-            <div className="bg-white/90 backdrop-blur rounded-2xl shadow-xl p-8 mb-8" style={{ height: '500px' }}>
+            <div 
+            className="bg-white/90 backdrop-blur rounded-2xl shadow-xl p-8 mb-8"
+            style={{ height: '500px', padding: '20px' }}
+            >
               <Bar data={chartData} options={chartOptions} />
             </div>
 

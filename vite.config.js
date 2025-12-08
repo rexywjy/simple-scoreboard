@@ -5,5 +5,5 @@ import tailwindcss from '@tailwindcss/vite'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss()],
-  base: '/scoreboard-ayat/', // Change this to your repo name
+  base: '/simple-scoreboard/', // Must match your GitHub repo name
 })
